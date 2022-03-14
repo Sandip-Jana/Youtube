@@ -1,0 +1,135 @@
+[Video Explanation](https://youtu.be/lk7WUhAwYGA)
+
+For solving this problem the pre-requisite is that you understand how to solve the below two problems : 
+
+1 . https://leetcode.com/problems/best-sightseeing-pair/
+*       Since we look for a pair i,j such that value of A[i]+A[j] + (i-j). This can be further reduced to 
+	*       (A[i] + i ) + ( A[j] - j )
+	*       which means at every index `j` we just need to consider the best value among all possible combinations of A[i] + i.
+	*       But notice one small detail here. For every `j` we only need all values of `i` which occur left of it because the problem states that for any pair the i,j  the condition is i<j. 
+	*       So we just iterate over j and keep updating the answer with the best possible value of A[i]+i we found so far
+
+```
+class Solution {
+    public int maxScoreSightseeingPair(int[] values) {
+		int best = values[0]+0;  
+		int ans = 0;
+		for (int j=1 ; j<values.length ; j++) {
+            // for each j answer is values[j]-j + best value of (values[i]+i) we found so far
+			ans = Math.max( best + values[j]-j , ans );
+            
+            // update the value of best values[i]+i.
+			best = Math.max( best , values[j]+j );
+		}
+		return ans;
+	}
+}
+```
+
+2 . https://leetcode.com/problems/minimum-falling-path-sum/
+* 		The minimum path to get to element A[i][j] is the minimum of A[i - 1][j - 1], A[i - 1][j] and A[i - 1][j + 1].
+
+```
+class Solution {
+    public int minFallingPathSum(int[][] matrix) {
+        int n = matrix.length;
+        int m = n == 0 ? 0 : matrix[0].length;
+        for(int i=1 ; i<n ; i++) {
+            int temp[] = new int[m];
+            for(int j=0 ; j<m ; j++) {
+                int min = Integer.MAX_VALUE;
+                for(int k=j-1 ; k<=j+1 ; k++) {
+                    if ( k<0 || k>=m ) continue;
+                    min = Math.min(matrix[i-1][k] , min );
+                }
+                temp[j] = matrix[i][j]+min;
+            }
+            matrix[i] = temp;
+        }
+        
+        int ans = Integer.MAX_VALUE;
+        for(int j=0 ; j<m ; j++)
+            ans = Math.min(ans , matrix[n-1][j]);
+        return ans;
+    }
+}
+```
+
+Now lets come back to our original problem : 
+
+The only condition is we need to check the best value among all previous row values
+
+`dp[i][j] = max(dp[i - 1][k] + point[i][j] - abs(j - k)) for each 0 <= k < points[i - 1].length`
+
+Notice this will TLE as the complexity is (rows * columns * rows) which is cubic.
+
+The idea is we can further decompose the values of absolute. Two cases arise :
+
+Case 1 : `k < j`
+then `abs(j-k) = j-k`
+so,
+`dp[i][j] = dp[i - 1][k] + point[i][j] - (j - k)  for each 0 <= k < points[i - 1].length`
+`dp[i][j] = dp[i - 1][k] + point[i][j] - j + k  `
+`dp[i][j] = ( dp[i - 1][k] + k )  + ( point[i][j] - j ) `
+
+This equation is similar to the one we saw in problem 1 above, where we simply for an index checked all values on the left
+Why left because ` k < j ` :P
+
+Case 2 : `k > j`
+then `abs(j-k) = k-j`
+so,
+`dp[i][j] = dp[i - 1][k] + point[i][j] - (k - j)  for each 0 <= k < points[i - 1].length`
+`dp[i][j] = dp[i - 1][k] + point[i][j] - k + j  `
+`dp[i][j] = ( dp[i - 1][k] - k )  + ( point[i][j] + j ) `
+
+Similar equation we only need all values to the right. Why right because `k > j`   :)
+
+Above intuitions are enough to solve the problem. Happy Upsolving :)
+
+```
+
+import java.awt.*;
+import java.util.*;
+import java.util.List;
+class Solution {
+    public long maxPoints(int[][] points) {
+		int n = points.length;
+		int m = (n == 0) ? 0 : points[0].length;
+
+		long dp[][] = new long[n][m];
+		for (int j=0 ; j<m ; j++)
+			dp[0][j] = points[0][j];
+
+		for (int i=1 ; i<n ; i++) {
+
+			long leftMax[] = new long[m];
+			leftMax[0] = dp[i-1][0];
+			for (int k=1 ; k<m ; k++) {
+				leftMax[k] = Math.max( leftMax[k-1] , dp[i-1][k] + k );
+			}
+
+			long rightMax[] = new long[m];
+			rightMax[m-1] = dp[i-1][m-1] - (m-1);
+			for (int k = m-2 ; k >= 0 ; k--) {
+				rightMax[k] = Math.max( rightMax[k+1] , dp[i-1][k] - k );
+			}
+
+			for (int j=0 ; j<m ; j++) {
+				dp[i][j] = points[i][j] + Math.max( leftMax[j]-j , rightMax[j]+j );
+			}
+		}
+		long ans = 0;
+		for (int j=0 ; j<m ; j++)
+			ans = Math.max( ans , dp[n-1][j] );
+
+		return ans;
+	}
+}
+```
+
+Complexity Analysis
+
+**Time: O(m * n)
+Memory: O(n)**
+
+Upvote if you upsolved all the three problems and liked the approach  :)
